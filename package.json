@@ -1,0 +1,30 @@
+{
+	"name": "@adraffy/ens-norm-uts46.js",
+	"version": "0.0.1",
+	"description": "ENS Name Normalization UTS46 Implementation",
+	"keywords": [
+		"ENS",
+		"Ethereum",
+		"UTS-46",
+		"IDNA"
+	],
+	"main": "index.js",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/adraffy/ens-norm-uts46.js.git"
+	},
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/adraffy/ens-norm-uts46.js/issues"
+	},
+	"homepage": "https://github.com/adraffy/ens-norm-uts46.js#readme",
+	"author": {
+		"name": "raffy.eth",
+		"email": "raffy@me.com",
+		"url": "http://raffy.antistupid.com"
+	},
+	"scripts": {
+		"test": "node test-idna.js"
+	}
+}

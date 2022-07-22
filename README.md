@@ -23,3 +23,8 @@ const uts46 = await create_uts46({
 
 console.log(uts46('RAFFY.ETH'));
 ```
+
+## NPM
+```
+npm i @adraffy/ens-norm-uts46.js
+```

@@ -4,7 +4,7 @@ export function escape_unicode(s) {
 	// 0x22 (double-quote)
 	// 0x7B/0x7D (curly-brace, used for escaping)
 	// 0x7F (delete)
-	return s.replace(/[^\x21\x23-\x7A\x7C\x7E]/gu, x => `{${x.codePointAt(0)}}`);
+	return s.replace(/[^\x21\x23-\x7A\x7C\x7E]/gu, x => `{${x.codePointAt(0).toUpperCase()}}`);
 }
 
 // str to cps

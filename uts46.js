@@ -8,7 +8,7 @@ const {T: JOIN_T, D: JOIN_D, L: JOIN_L, R: JOIN_R} = await read_joining_type_map
 const JOIN_LD = new Set([...JOIN_D, ...JOIN_L]);
 const JOIN_RD = new Set([...JOIN_D, ...JOIN_R]);
 
-const {R: BIDI_R, AL: BIDI_AL, L: BIDI_l, AN: BIDI_AN, EN: BIDI_EN, ES: BIDI_ES, CS: BIDI_CS, ET: BIDI_ET, ON: BIDI_ON, BN: BIDI_BN, NSM: BIDI_NSM} = await read_bidi_class_map();
+const {R: BIDI_R, AL: BIDI_AL, L: BIDI_L, AN: BIDI_AN, EN: BIDI_EN, ES: BIDI_ES, CS: BIDI_CS, ET: BIDI_ET, ON: BIDI_ON, BN: BIDI_BN, NSM: BIDI_NSM} = await read_bidi_class_map();
 const R_AL = new Set([...BIDI_R, ...BIDI_AL]);
 const ECTOB = new Set([...BIDI_ES, ...BIDI_CS, ...BIDI_ET, ...BIDI_ON, ...BIDI_BN]);
 
@@ -167,13 +167,13 @@ export function validate_bidi_label(cps) {
 		if (!(R_AL.has(last) || BIDI_EN.has(last) || BIDI_AN.has(last))) throw new Error(`RTL: disallowed ending`);
 		// 4. In an RTL label, if an EN is present, no AN may be present, and vice versa.
 		if (cps.some(cp => BIDI_EN.has(cp)) && cps.some(cp => BIDI_AN.has(cp))) throw new Error(`RTL: AN+EN`);
-	} else if (BIDI_l.has(cps[0])) { // LTR
+	} else if (BIDI_L.has(cps[0])) { // LTR
 		// 5. In an LTR label, only characters with the Bidi properties L, EN, ES, CS, ET, ON, BN, or NSM are allowed.
-		if (!cps.every(cp => BIDI_l.has(cp) || BIDI_EN.has(cp) || ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`LTR: disallowed properties`);
+		if (!cps.every(cp => BIDI_L.has(cp) || BIDI_EN.has(cp) || ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`LTR: disallowed properties`);
 		// 6. end with L or EN .. 0+ NSM
 		while (BIDI_NSM.has(cps[last])) last--;
 		last = cps[last];
-		if (!BIDI_l.has(last) && !BIDI_EN.has(last)) throw new Error(`LTR: disallowed ending`);
+		if (!BIDI_L.has(last) && !BIDI_EN.has(last)) throw new Error(`LTR: disallowed ending`);
 	} else {
 		throw new Error(`unknown direction`);
 	}

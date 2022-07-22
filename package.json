@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46.js",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",

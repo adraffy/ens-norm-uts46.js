@@ -2,7 +2,7 @@
 // https://unicode.org/reports/tr46/#Conformance_Testing
 
 import {create_uts46} from './uts46.js';
-import {read_idna_tests} from './unicode-logic.js';
+import {readFile} from 'node:fs/promises';
 
 const uts46 = await create_uts46({
 	version: 2003, 
@@ -14,7 +14,7 @@ const uts46 = await create_uts46({
 	punycode: true
 });
 
-for (let [test, cases] of Object.entries(await read_idna_tests())) {
+for (let [test, cases] of Object.entries(JSON.parse(await readFile('./unicode-parsed/IdnaTestV2.json')))) {
 	console.log(test, cases.length);
 	for (let [input, output, errors] of cases) {
 		// The special error codes X3 and X4_2 are now returned where a toASCII error code

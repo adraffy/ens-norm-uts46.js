@@ -1,21 +1,24 @@
-import {explode_cp, escape_unicode} from './utils.js';
-import {read_idna_rules, read_bidi_class_map, read_combining_mark_set, read_joining_type_map, read_script_map, read_virama_set} from './unicode-logic.js';
+import {explode_cp, escape_unicode, parse_cp_range, parse_cp_sequence} from './utils.js';
 import {puny_decode} from './puny.js';
+import data from './unicode-parsed/include.js';
 
-const CM = await read_combining_mark_set();
-
-const {T: JOIN_T, D: JOIN_D, L: JOIN_L, R: JOIN_R} = await read_joining_type_map();
-const JOIN_LD = new Set([...JOIN_D, ...JOIN_L]);
-const JOIN_RD = new Set([...JOIN_D, ...JOIN_R]);
-
-const {R: BIDI_R, AL: BIDI_AL, L: BIDI_L, AN: BIDI_AN, EN: BIDI_EN, ES: BIDI_ES, CS: BIDI_CS, ET: BIDI_ET, ON: BIDI_ON, BN: BIDI_BN, NSM: BIDI_NSM} = await read_bidi_class_map();
-const R_AL = new Set([...BIDI_R, ...BIDI_AL]);
-const ECTOB = new Set([...BIDI_ES, ...BIDI_CS, ...BIDI_ET, ...BIDI_ON, ...BIDI_BN]);
-
-const {Greek: SCRIPT_GREEK, Hebrew: SCRIPT_HEBREW, Hiragana, Katakana, Han} = await read_script_map();
-const SCRIPT_HKH = new Set([...Hiragana, ...Katakana, ...Han])
-
-const VIRAMA = await read_virama_set();
+function set(...a) {
+	return new Set(a.flat().flatMap(parse_cp_range));
+}
+const CM = set(data.CM);
+const JOIN_T = set(data.JoiningType.T);
+const JOIN_LD = set(data.JoiningType.L, data.JoiningType.D);
+const JOIN_RD = set(data.JoiningType.R, data.JoiningType.D);
+const SCRIPT_GREEK = set(data.Scripts.Greek);
+const SCRIPT_HEBREW = set(data.Scripts.Hebrew);
+const SCRIPT_HKH = set(data.Scripts.Hiragana, data.Scripts.Katakana, data.Scripts.Han);
+const BIDI_R_AL = set(data.BidiClass.R, data.BidiClass.AL);
+const BIDI_L = set(data.BidiClass.L);
+const BIDI_AN = set(data.BidiClass.AN);
+const BIDI_EN = set(data.BidiClass.EN);
+const BIDI_ECTOB = set(data.BidiClass.ES, data.BidiClass.CS, data.BidiClass.ET, data.BidiClass.ON, data.BidiClass.BN);
+const BIDI_NSM = set(data.BidiClass.NSM);
+const VIRAMA = set(data.VIRAMA);
 
 function format_cp(cp) {
 	return `"${escape_unicode(String.fromCodePoint(cp))}"`;
@@ -136,7 +139,7 @@ export async function create_uts46({
 		// * According to IDNATestV2, this is calculated AFTER puny decoding
 		// https://unicode.org/reports/tr46/#Notation
 		// A Bidi domain name is a domain name containing at least one character with BIDI_Class R, AL, or AN
-		if (check_bidi && labels.some(x => x.cps.some(cp => R_AL.has(cp) || BIDI_AN.has(cp)))) {
+		if (check_bidi && labels.some(x => x.cps.some(cp => BIDI_R_AL.has(cp) || BIDI_AN.has(cp)))) {
 			for (let {label, cps} of labels) {
 				try {
 					validate_bidi_label(cps);
@@ -149,6 +152,64 @@ export async function create_uts46({
 	};
 }
 
+export async function read_idna_rules({version, use_STD3, valid_deviations}) {
+	switch (version) {
+		case 2003:
+		case 2008: break;
+		default: throw new TypeError(`Unknown IDNA version: ${version}`);
+	}
+	let {
+		ignored,
+		mapped,
+		valid, 
+		valid_NV8,
+		valid_XV8,
+		deviation_mapped,
+		deviation_ignored,
+		disallowed,
+		disallowed_STD3_mapped,
+		disallowed_STD3_valid,
+		...extra
+	} = data.IDNA;
+	if (Object.keys(extra).length > 0) {
+		throw new Error(`Assumption wrong: Unknown IDNA Keys: ${Object.keys(extra)}`);
+	}
+	if (!use_STD3) {
+		// disallowed_STD3_valid: the status is disallowed if UseSTD3ASCIIRules=true (the normal case); 
+		// implementations that allow UseSTD3ASCIIRules=false would treat the code point as valid.
+		valid.push(...disallowed_STD3_valid);
+		// disallowed_STD3_mapped: the status is disallowed if UseSTD3ASCIIRules=true (the normal case); 
+		// implementations that allow UseSTD3ASCIIRules=false would treat the code point as mapped.
+		mapped.push(...disallowed_STD3_mapped);
+	}
+	if (version == 2003) {
+		// There are two values: NV8 and XV8. NV8 is only present if the status is valid 
+		// but the character is excluded by IDNA2008 from all domain names for all versions of Unicode. 
+		valid.push(...valid_NV8);
+		// XV8 is present when the character is excluded by IDNA2008 for the current version of Unicode.
+		valid.push(...valid_XV8);
+	} 
+	// IDNA2008 allows the joiner characters (ZWJ and ZWNJ) in labels. 
+	// By contrast, these are removed by the mapping in IDNA2003.
+	if (version == 2008 || valid_deviations) { 
+		valid.push(...deviation_mapped.map(([x]) => x));
+		valid.push(...deviation_ignored);
+	} else {
+		mapped.push(...deviation_mapped);
+		ignored.push(...deviation_ignored);
+	}
+	valid = new Set(valid.flatMap(parse_cp_range));
+	ignored = new Set(ignored.flatMap(parse_cp_range));
+	// x:[char] => ys:[char, char, ...]
+	mapped = mapped.flatMap(([src, dst]) => {
+		let cps = parse_cp_sequence(dst);
+		// we need to re-apply the rules to the mapped output
+		return cps.some(cp => ignored.has(cp) || !valid.has(cp)) ? [] : parse_cp_range(src).map(x => [x, cps]);
+	});
+	return {valid, ignored, mapped};
+}
+
+
 export function validate_bidi_label(cps) {
 	if (cps.length == 0) return;
 	// https://www.rfc-editor.org/rfc/rfc5893.txt
@@ -156,20 +217,20 @@ export function validate_bidi_label(cps) {
 	// or AL.  If it has the R or AL property, it is an RTL label; if it
 	// has the L property, it is an LTR label.
 	let last = cps.length - 1;
-	if (R_AL.has(cps[0])) { // RTL 
+	if (BIDI_R_AL.has(cps[0])) { // RTL 
 		// 2.) In an RTL label, only characters with the Bidi properties R, AL, AN, EN, ES, CS, ET, ON, BN, or NSM are allowed.
-		if (!cps.every(cp => R_AL.has(cp) || BIDI_AN.has(cp) || BIDI_EN.has(cp) || ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`RTL: disallowed properties`);
+		if (!cps.every(cp => BIDI_R_AL.has(cp) || BIDI_AN.has(cp) || BIDI_EN.has(cp) || BIDI_ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`RTL: disallowed properties`);
 		// 3. In an RTL label, the end of the label must be a character with
 		// Bidi property R, AL, EN, or AN, followed by zero or more
 		// characters with Bidi property NSM.
 		while (BIDI_NSM.has(cps[last])) last--;
 		last = cps[last];
-		if (!(R_AL.has(last) || BIDI_EN.has(last) || BIDI_AN.has(last))) throw new Error(`RTL: disallowed ending`);
+		if (!(BIDI_R_AL.has(last) || BIDI_EN.has(last) || BIDI_AN.has(last))) throw new Error(`RTL: disallowed ending`);
 		// 4. In an RTL label, if an EN is present, no AN may be present, and vice versa.
 		if (cps.some(cp => BIDI_EN.has(cp)) && cps.some(cp => BIDI_AN.has(cp))) throw new Error(`RTL: AN+EN`);
 	} else if (BIDI_L.has(cps[0])) { // LTR
 		// 5. In an LTR label, only characters with the Bidi properties L, EN, ES, CS, ET, ON, BN, or NSM are allowed.
-		if (!cps.every(cp => BIDI_L.has(cp) || BIDI_EN.has(cp) || ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`LTR: disallowed properties`);
+		if (!cps.every(cp => BIDI_L.has(cp) || BIDI_EN.has(cp) || BIDI_ECTOB.has(cp) || BIDI_NSM.has(cp))) throw new Error(`LTR: disallowed properties`);
 		// 6. end with L or EN .. 0+ NSM
 		while (BIDI_NSM.has(cps[last])) last--;
 		last = cps[last];

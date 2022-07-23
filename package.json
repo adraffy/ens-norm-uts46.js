@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46.js",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -25,6 +25,13 @@
 		"url": "http://raffy.antistupid.com"
 	},
 	"scripts": {
-		"test": "node test-idna.js"
+		"update": "node unicode-update.js",
+		"test": "node test-idna.js",
+		"build": "rollup -c"
+	},
+	"devDependencies": {
+		"node-fetch": "^3.2.9",
+		"rollup": "^2.77.0",
+		"rollup-plugin-terser": "^7.0.2"
 	}
 }

@@ -89,36 +89,36 @@ async function translate(name, impl = {
 	let out_file = new URL(`${name}.json`, parsed_dir);
 	await writeFile(out_file, JSON.stringify(root, null, 2));
 	console.log(`Translated: ${out_file.pathname}`);
-    return root;
+	return root;
 }
 
 await translate('IdnaTestV2', {
-    test: 'COMPAT',
-    comment(s) {
-        let match = s.match(/^([A-Z ]*) TESTS$/);
-        if (match) {
-            this.test = match[1].trim();
-        }
-    },
-    row([src, toUnicode, status]) {
-        status = status.split(/[\[\],]/).map(x => x.trim()).filter(x => x);
-        this.get_bucket(this.test).push([src, toUnicode, status]);
-    }
+	test: 'COMPAT',
+	comment(s) {
+		let match = s.match(/^([A-Z ]*) TESTS$/);
+		if (match) {
+			this.test = match[1].trim();
+		}
+	},
+	row([src, toUnicode, status]) {
+		status = status.split(/[\[\],]/).map(x => x.trim()).filter(x => x);
+		this.get_bucket(this.test).push([src, toUnicode, status]);
+	}
 });
 
 let IDNA = await translate('IdnaMappingTable', {
-    row([src, type, dst, status]) {
-        if (!src) throw new Error('wtf src');
-        if (type == 'deviation') type = dst ? 'deviation_mapped' : 'deviation_ignored';
-        if (status) type = `${type}_${status}`; // NV8/XV8
-        let bucket = this.get_bucket(type);
-        if (type.includes('mapped')) {
-            if (!dst) throw new Error('wtf dst');
-            bucket.push([src, dst]);
-        } else {
-            bucket.push(src); 
-        }
-    }
+	row([src, type, dst, status]) {
+		if (!src) throw new Error('wtf src');
+		if (type == 'deviation') type = dst ? 'deviation_mapped' : 'deviation_ignored';
+		if (status) type = `${type}_${status}`; // NV8/XV8
+		let bucket = this.get_bucket(type);
+		if (type.includes('mapped')) {
+			if (!dst) throw new Error('wtf dst');
+			bucket.push([src, dst]);
+		} else {
+			bucket.push(src); 
+		}
+	}
 });
 
 let GeneralCategory = await translate('DerivedGeneralCategory');
@@ -128,26 +128,28 @@ let BidiClass = await translate('DerivedBidiClass');
 let Scripts = await translate('Scripts');
 
 function filter_keys(map, keys) {
-    let ret = {};
-    for (let key of keys) {
-        let value = map[key];
-        if (!value) throw new Error(`wtf key: ${key}`);
-        ret[key] = value;
-    }
-    return ret;
+	let ret = {};
+	for (let key of keys) {
+		let value = map[key];
+		if (!value) throw new Error(`wtf key: ${key}`);
+		ret[key] = value;
+	}
+	return ret;
 }
 
 Scripts = filter_keys(Scripts, ['Greek', 'Hebrew', 'Hiragana', 'Katakana', 'Han']);
 JoiningType = filter_keys(JoiningType, ['T', 'D', 'L', 'R']);
 BidiClass = filter_keys(BidiClass, ['R', 'AL', 'L', 'AN', 'EN', 'ES', 'CS', 'ET', 'ON', 'BN', 'NSM']);
 
+let CM = Object.entries(GeneralCategory).flatMap(([k, v]) => k.startsWith('M') ? [...v] : []);
+
 let out_file = new URL(`include.js`, parsed_dir);
 await writeFile(out_file, `export default ${JSON.stringify({
-    IDNA,
-    CM: Object.entries(GeneralCategory).flatMap(([k, v]) => k.startsWith('M') ? [...v] : []),
-    JoiningType,
-    BidiClass,
-    VIRAMA: CombiningClass[9],
-    Scripts
-}, null, 2)};`);
+	IDNA,
+	CM,
+	JoiningType,
+	BidiClass,
+	VIRAMA: CombiningClass[9],
+	Scripts
+}, null, '\t')};`);
 console.log(`Created: ${out_file.pathname}`);

@@ -2,10 +2,11 @@
 // https://unicode.org/reports/tr46/#Conformance_Testing
 
 import {create_uts46} from './uts46.js';
-import {readFile} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 
-const uts46 = await create_uts46({
+const uts46 = create_uts46({
 	version: 2003, 
+	use_STD3: true,
 	valid_deviations: true,
 	check_hyphens: true,
 	check_bidi: true,
@@ -14,11 +15,11 @@ const uts46 = await create_uts46({
 	punycode: true
 });
 
-for (let [test, cases] of Object.entries(JSON.parse(await readFile('./unicode-parsed/IdnaTestV2.json')))) {
+for (let [test, cases] of Object.entries(JSON.parse(readFileSync(new URL('./unicode-parsed/IdnaTestV2.json', import.meta.url))))) {
 	console.log(test, cases.length);
 	for (let [input, output, errors] of cases) {
 		// The special error codes X3 and X4_2 are now returned where a toASCII error code
-		errors = errors.filter(x => x != 'X4_2' && x != 'X3');          
+		errors = errors.filter(x => x != 'X4_2' && x != 'X3');
 		if (!output) output = input;
 		let norm, norm_err;
 		try {

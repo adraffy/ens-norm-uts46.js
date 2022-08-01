@@ -1,6 +1,6 @@
 {
-	"name": "@adraffy/ens-norm-uts46.js",
-	"version": "0.0.4",
+	"name": "@adraffy/ens-norm-uts46",
+	"version": "0.0.5",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -30,8 +30,12 @@
 		"build": "rollup -c"
 	},
 	"devDependencies": {
+		"@rollup/plugin-node-resolve": "^13.3.0",
 		"node-fetch": "^3.2.9",
 		"rollup": "^2.77.0",
 		"rollup-plugin-terser": "^7.0.2"
+	},
+	"dependencies": {
+		"@adraffy/punycode": "^0.0.1"
 	}
 }

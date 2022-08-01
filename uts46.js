@@ -1,24 +1,24 @@
 import {explode_cp, escape_unicode, parse_cp_range, parse_cp_sequence} from './utils.js';
-import {puny_decode} from './puny.js';
-import data from './unicode-parsed/include.js';
+import {puny_decode} from '@adraffy/punycode';
+import DATA from './unicode-parsed/include.js';
 
 function set(...a) {
 	return new Set(a.flat().flatMap(parse_cp_range));
 }
-const CM = set(data.CM);
-const JOIN_T = set(data.JoiningType.T);
-const JOIN_LD = set(data.JoiningType.L, data.JoiningType.D);
-const JOIN_RD = set(data.JoiningType.R, data.JoiningType.D);
-const SCRIPT_GREEK = set(data.Scripts.Greek);
-const SCRIPT_HEBREW = set(data.Scripts.Hebrew);
-const SCRIPT_HKH = set(data.Scripts.Hiragana, data.Scripts.Katakana, data.Scripts.Han);
-const BIDI_R_AL = set(data.BidiClass.R, data.BidiClass.AL);
-const BIDI_L = set(data.BidiClass.L);
-const BIDI_AN = set(data.BidiClass.AN);
-const BIDI_EN = set(data.BidiClass.EN);
-const BIDI_ECTOB = set(data.BidiClass.ES, data.BidiClass.CS, data.BidiClass.ET, data.BidiClass.ON, data.BidiClass.BN);
-const BIDI_NSM = set(data.BidiClass.NSM);
-const VIRAMA = set(data.VIRAMA);
+const CM = set(DATA.CM);
+const JOIN_T = set(DATA.JoiningType.T);
+const JOIN_LD = set(DATA.JoiningType.L, DATA.JoiningType.D);
+const JOIN_RD = set(DATA.JoiningType.R, DATA.JoiningType.D);
+const SCRIPT_GREEK = set(DATA.Scripts.Greek);
+const SCRIPT_HEBREW = set(DATA.Scripts.Hebrew);
+const SCRIPT_HKH = set(DATA.Scripts.Hiragana, DATA.Scripts.Katakana, DATA.Scripts.Han);
+const BIDI_R_AL = set(DATA.BidiClass.R, DATA.BidiClass.AL);
+const BIDI_L = set(DATA.BidiClass.L);
+const BIDI_AN = set(DATA.BidiClass.AN);
+const BIDI_EN = set(DATA.BidiClass.EN);
+const BIDI_ECTOB = set(DATA.BidiClass.ES, DATA.BidiClass.CS, DATA.BidiClass.ET, DATA.BidiClass.ON, DATA.BidiClass.BN);
+const BIDI_NSM = set(DATA.BidiClass.NSM);
+const VIRAMA = set(DATA.VIRAMA);
 
 function format_cp(cp) {
 	return `"${escape_unicode(String.fromCodePoint(cp))}"`;
@@ -28,15 +28,15 @@ function label_error(label, error) {
 	return new Error(`${error} in "${escape_unicode(label)}"`);
 }
 
-export async function create_uts46({
+export function create_uts46({
 	check_hyphens, check_bidi, contextJ, contextO, check_leading_cm, 
-	punycode, version, use_STD3 = true, valid_deviations
+	punycode, version, use_STD3, valid_deviations
 } = {}) {	
-	let {valid, ignored, mapped} = await read_idna_rules({use_STD3, version, valid_deviations});
+	let {valid, ignored, mapped} = read_idna_rules({use_STD3, version, valid_deviations});
 	mapped = Object.fromEntries(mapped);
 	let valid_puny = valid;
 	if (punycode && !valid_deviations) {
-		valid_puny = await read_idna_rules({use_STD3, version, valid_deviations: true}).valid;
+		valid_puny = read_idna_rules({use_STD3, version, valid_deviations: true}).valid;
 	}
 	return function(name) {
 		// https://unicode.org/reports/tr46/#Processing
@@ -152,11 +152,11 @@ export async function create_uts46({
 	};
 }
 
-export async function read_idna_rules({version, use_STD3, valid_deviations}) {
+export function read_idna_rules({version, use_STD3, valid_deviations}) {
 	switch (version) {
 		case 2003:
 		case 2008: break;
-		default: throw new TypeError(`Unknown IDNA version: ${version}`);
+		default: throw new TypeError(`unknown IDNA version: ${version}`);
 	}
 	let {
 		ignored,
@@ -170,9 +170,9 @@ export async function read_idna_rules({version, use_STD3, valid_deviations}) {
 		disallowed_STD3_mapped,
 		disallowed_STD3_valid,
 		...extra
-	} = data.IDNA;
+	} = DATA.IDNA;
 	if (Object.keys(extra).length > 0) {
-		throw new Error(`Assumption wrong: Unknown IDNA Keys: ${Object.keys(extra)}`);
+		throw new Error(`unexpected IDNA keys: ${Object.keys(extra)}`);
 	}
 	if (!use_STD3) {
 		// disallowed_STD3_valid: the status is disallowed if UseSTD3ASCIIRules=true (the normal case); 

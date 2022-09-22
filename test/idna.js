@@ -1,7 +1,7 @@
 // perform IDNATestV2, fail on any error
 // https://unicode.org/reports/tr46/#Conformance_Testing
 
-import {create_uts46} from './uts46.js';
+import {create_uts46} from '../src/uts46.js';
 import {readFileSync} from 'node:fs';
 
 const uts46 = create_uts46({
@@ -15,7 +15,7 @@ const uts46 = create_uts46({
 	punycode: true
 });
 
-for (let [test, cases] of Object.entries(JSON.parse(readFileSync(new URL('./unicode-parsed/IdnaTestV2.json', import.meta.url))))) {
+for (let [test, cases] of Object.entries(JSON.parse(readFileSync(new URL('../derive/json/IdnaTestV2.json', import.meta.url))))) {
 	console.log(test, cases.length);
 	for (let [input, output, errors] of cases) {
 		// The special error codes X3 and X4_2 are now returned where a toASCII error code
@@ -45,7 +45,7 @@ for (let [test, cases] of Object.entries(JSON.parse(readFileSync(new URL('./unic
 		}
 		if (!type.startsWith('same')) {
 			console.log({input, output, errors, norm, norm_err, type});
-			process.exit(1);
+			throw new Error(test);
 		}
 	}
 }

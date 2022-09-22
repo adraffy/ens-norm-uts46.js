@@ -1,6 +1,6 @@
 import {explode_cp, escape_unicode, parse_cp_range, parse_cp_sequence} from './utils.js';
 import {puny_decode} from '@adraffy/punycode';
-import DATA from './unicode-parsed/include.js';
+import DATA from './include.js';
 
 function set(...a) {
 	return new Set(a.flat().flatMap(parse_cp_range));
@@ -28,9 +28,13 @@ function label_error(label, error) {
 	return new Error(`${error} in "${escape_unicode(label)}"`);
 }
 
+function nfc_native(cps) {
+	return explode_cp(String.fromCodePoint(...cps).normalize('NFC'));
+}
+
 export function create_uts46({
 	check_hyphens, check_bidi, contextJ, contextO, check_leading_cm, 
-	punycode, version, use_STD3, valid_deviations
+	punycode, version, use_STD3, valid_deviations, nfc = nfc_native
 } = {}) {	
 	let {valid, ignored, mapped} = read_idna_rules({use_STD3, version, valid_deviations});
 	mapped = Object.fromEntries(mapped);
@@ -67,7 +71,7 @@ export function create_uts46({
 		}
 		// [Processing] 2.) Normalize: Normalize the domain_name string to Unicode Normalization Form C.
 		// [Processing] 3.) Break: Break the string into labels at U+002E ( . ) FULL STOP.
-		let labels = String.fromCodePoint(...output).normalize('NFC').split('.').map(label => {
+		let labels = String.fromCodePoint(...nfc(output)).split('.').map(label => {
 			// [Processing] 4.) Convert/Validate
 			try {				
 				let cps = explode_cp(label);
@@ -86,12 +90,12 @@ export function create_uts46({
 							}
 						}
 						// [Validity] 1.) The label must be in Unicode Normalization Form NFC.
-						let decoded = String.fromCodePoint(...cps);
-						if (decoded !== decoded.normalize('NFC')) {
+						let decoded = nfc(cps);
+						if (cps.some((cp, i) => cp !== decoded[i])) {
 							throw new Error(`Not normalized`);
 						}
 						// Otherwise replace the original label in the string by the results of the conversion. 
-						label = decoded;
+						label = String.fromCodePoint(...decoded);
 					} catch (err) {
 						throw new Error(`Punycode: ${err.message}`);
 					}

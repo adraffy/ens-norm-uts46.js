@@ -1,28 +1,29 @@
 import {createReadStream} from 'node:fs';
 import {createInterface} from 'node:readline'; 
 import {writeFile, mkdir} from 'node:fs/promises';
-import fetch from 'node-fetch';
 
 // https://www.unicode.org/versions/latest/
-const major = 14;
-const minor = 0;
-const patch = 0;
+const MAJOR = 15;
+const MINOR = 0;
+const PATCH = 0;
 
 function url_for_public(s) {
 	return `https://www.unicode.org/Public/${s}`;
 }
 function url_for_spec(s) {
-	return url_for_public(`${major}.${minor}.${patch}/${s}`);
+	return url_for_public(`${MAJOR}.${MINOR}.${PATCH}/${s}`);
 }
 function url_for_idna(s) {
-	return url_for_public(`idna/${major}.${minor}.${patch}/${s}`);
+	return url_for_public(`idna/${MAJOR}.${MINOR}.${PATCH}/${s}`);
 }
+/*
 function url_for_emoji(s) {
 	return url_for_public(`emoji/${major}.${minor}/${s}`);
 }
 function url_for_security(s) {
 	return url_for_public(`/security/${major}.${minor}.${patch}/${s}`);
 }
+*/
 
 let urls = [
 	url_for_idna('IdnaMappingTable.txt'),
@@ -34,18 +35,19 @@ let urls = [
 	url_for_spec('ucd/Scripts.txt'),
 ];
 
-let raw_dir = new URL('./unicode-raw/', import.meta.url);
-let parsed_dir = new URL('./unicode-parsed/', import.meta.url);
-await mkdir(raw_dir, {recursive: true});
-await mkdir(parsed_dir, {recursive: true});
+let data_dir = new URL('./data/', import.meta.url);
+let json_dir = new URL('./json/', import.meta.url);
+let out_file = new URL(`../src/include.js`, import.meta.url);
+await mkdir(data_dir, {recursive: true});
+await mkdir(json_dir, {recursive: true});
 
 // write a version file
-await writeFile(new URL('version.json', raw_dir), JSON.stringify({major, minor, patch, date: new Date()}));
+await writeFile(new URL('version.json', data_dir), JSON.stringify({major: MAJOR, minor: MINOR, patch: PATCH, date: new Date()}));
 
 // download the unicode shit
 await Promise.all(urls.map(async url => {
 	let name = url.split('/').pop();
-	let file = new URL(name, raw_dir);
+	let file = new URL(name, data_dir);
 	try {
 		let res = await fetch(url);
 		if (res.status != 200) throw new Error(`HTTP error ${res.status}`);
@@ -73,7 +75,7 @@ async function translate(name, impl = {
 		} 
 	};
 	let {root, row, comment} = scope;
-	for await (let line of createInterface({input: createReadStream(new URL(`${name}.txt`, raw_dir))})) {
+	for await (let line of createInterface({input: createReadStream(new URL(`${name}.txt`, data_dir))})) {
 		let rest;
 		let pos = line.indexOf('#');
 		if (pos >= 0) {
@@ -86,7 +88,7 @@ async function translate(name, impl = {
 			comment?.call(scope, rest);
 		}
 	}
-	let out_file = new URL(`${name}.json`, parsed_dir);
+	let out_file = new URL(`${name}.json`, json_dir);
 	await writeFile(out_file, JSON.stringify(root, null, 2));
 	console.log(`Translated: ${out_file.pathname}`);
 	return root;
@@ -101,6 +103,10 @@ await translate('IdnaTestV2', {
 		}
 	},
 	row([src, toUnicode, status]) {
+		// new in Unicode 15
+		// This file is in UTF-8, where characters may be escaped using the \uXXXX or \x{XXXX}
+		src = JSON.parse(`"${src}"`); // this hack should be backwards compat
+		toUnicode = JSON.parse(`"${toUnicode}"`);
 		status = status.split(/[\[\],]/).map(x => x.trim()).filter(x => x);
 		this.get_bucket(this.test).push([src, toUnicode, status]);
 	}
@@ -143,8 +149,8 @@ BidiClass = filter_keys(BidiClass, ['R', 'AL', 'L', 'AN', 'EN', 'ES', 'CS', 'ET'
 
 let CM = Object.entries(GeneralCategory).flatMap(([k, v]) => k.startsWith('M') ? [...v] : []);
 
-let out_file = new URL(`include.js`, parsed_dir);
 await writeFile(out_file, `export default ${JSON.stringify({
+	version: `${MAJOR}.${MINOR}.${PATCH}`,
 	IDNA,
 	CM,
 	JoiningType,

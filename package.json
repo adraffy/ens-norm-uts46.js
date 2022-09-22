@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -8,8 +8,11 @@
 		"UTS-46",
 		"IDNA"
 	],
-	"main": "index.js",
 	"type": "module",
+	"main": "dist/index.js",
+	"files": [
+		"./dist"
+	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/adraffy/ens-norm-uts46.js.git"
@@ -25,17 +28,16 @@
 		"url": "http://raffy.antistupid.com"
 	},
 	"scripts": {
-		"update": "node unicode-update.js",
-		"test": "node test-idna.js",
+		"derive": "node derive/make.js",
+		"test": "node test/idna.js",
 		"build": "rollup -c"
 	},
 	"devDependencies": {
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"node-fetch": "^3.2.9",
 		"rollup": "^2.77.0",
 		"rollup-plugin-terser": "^7.0.2"
 	},
 	"dependencies": {
-		"@adraffy/punycode": "^0.0.1"
+		"@adraffy/punycode": "^0.0.3"
 	}
 }

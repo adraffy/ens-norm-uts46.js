@@ -23,6 +23,10 @@ export default {
 			file: './dist/index.min.js',
 			format: 'es',
 			plugins: [TERSER]
-		}
+		},
+		{
+			file: './dist/index.cjs',
+			format: 'cjs',
+		},
 	]
 }

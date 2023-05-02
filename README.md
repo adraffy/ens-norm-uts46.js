@@ -1,4 +1,4 @@
-# ENS Name Normalization: UTS-46 Implementation
+#  ens-norm-uts46.js
 
 * Unicode `15.0.0`
 * Generate entire family of [UTS-46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
@@ -36,7 +36,6 @@ console.log(uts46('RAFFY.ETH'));
 
 * `git clone` this repo then `npm install`
 * `npm run derive` — download and parse Unicode data files
-	* Uses `Node 18` for `fetch()`
 	* Creates [include.js](./src/include.js)
 * `npm run test` — validate against IDNATestV2
 * `npm run build` — create `/dist/`

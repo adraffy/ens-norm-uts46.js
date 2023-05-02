@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -32,12 +32,10 @@
 		"test": "node test/idna.js",
 		"build": "rollup -c"
 	},
-	"devDependencies": {
-		"@rollup/plugin-node-resolve": "^13.3.0",
-		"rollup": "^2.77.0",
-		"rollup-plugin-terser": "^7.0.2"
-	},
 	"dependencies": {
-		"@adraffy/punycode": "^0.0.3"
+		"@adraffy/punycode": "^1.2.0",
+		"@rollup/plugin-node-resolve": "^15.0.2",
+		"@rollup/plugin-terser": "^0.4.1",
+		"rollup": "^3.21.2"
 	}
 }

@@ -1,9 +1,10 @@
-# ENS Name Normalization UTS46 Implementation
+# ENS Name Normalization: UTS-46 Implementation
 
 * Unicode `15.0.0`
-* Generate entire family of [UTS46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
+* Generate entire family of [UTS-46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
 * Passes **100%** [IDNATestV2](https://unicode.org/reports/tr46/#Conformance_Testing)
-* Supports [ContextO](https://datatracker.ietf.org/doc/html/rfc5892#appendix-A)
+* Supports [Context{J,O}](https://datatracker.ietf.org/doc/html/rfc5892#appendix-A)
+* Supports [Punycode](https://github.com/adraffy/punycode.js)
 * Uses `String.normalize()` for [NFC](https://unicode.org/reports/tr15/) (if no implementation is provided)
 
 ## Example
@@ -11,7 +12,7 @@
 ```Javascript
 import {create_uts46} from '@adraffy/ens-norm-uts46'; 
 // npm i @adraffy/ens-norm-uts46
-// browser: https://unpkg.com/@adraffy/ens-norm-uts46@latest/dist/index.min.js
+// browser: https://cdn.jsdelivr.net/npm/@adraffy/ens-norm-uts46@latest/dist/index.min.js
 
 const uts46 = await create_uts46({
 	version: 2003,

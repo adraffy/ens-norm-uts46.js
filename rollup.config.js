@@ -1,9 +1,19 @@
-import {terser} from 'rollup-plugin-terser';
-import {nodeResolve} from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import nodeResolve from '@rollup/plugin-node-resolve';
+
+const TERSER = terser({
+	compress: {
+		toplevel: true,
+		passes: 2, 
+		dead_code: true
+	}
+});
+
+const NODE = nodeResolve();
 
 export default {
 	input: './src/lib.js',
-	plugins: [nodeResolve()],	
+	plugins: [NODE],	
 	output: [
 		{
 			file: './dist/index.js',
@@ -12,13 +22,7 @@ export default {
 		{
 			file: './dist/index.min.js',
 			format: 'es',
-			plugins: [terser({
-				compress: {
-					toplevel: true,
-					passes: 1, 
-					dead_code: true
-				}
-			})]
+			plugins: [TERSER]
 		}
 	]
 }

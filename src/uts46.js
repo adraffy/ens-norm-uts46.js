@@ -181,26 +181,24 @@ export function read_idna_rules({version, use_STD3, valid_deviations}) {
 	if (!use_STD3) {
 		// disallowed_STD3_valid: the status is disallowed if UseSTD3ASCIIRules=true (the normal case); 
 		// implementations that allow UseSTD3ASCIIRules=false would treat the code point as valid.
-		valid.push(...disallowed_STD3_valid);
+		valid = valid.concat(disallowed_STD3_valid);
 		// disallowed_STD3_mapped: the status is disallowed if UseSTD3ASCIIRules=true (the normal case); 
 		// implementations that allow UseSTD3ASCIIRules=false would treat the code point as mapped.
-		mapped.push(...disallowed_STD3_mapped);
+		mapped = mapped.concat(disallowed_STD3_mapped);
 	}
 	if (version == 2003) {
 		// There are two values: NV8 and XV8. NV8 is only present if the status is valid 
 		// but the character is excluded by IDNA2008 from all domain names for all versions of Unicode. 
-		valid.push(...valid_NV8);
 		// XV8 is present when the character is excluded by IDNA2008 for the current version of Unicode.
-		valid.push(...valid_XV8);
+		valid = valid.concat(valid_NV8, valid_XV8);
 	} 
 	// IDNA2008 allows the joiner characters (ZWJ and ZWNJ) in labels. 
 	// By contrast, these are removed by the mapping in IDNA2003.
 	if (version == 2008 || valid_deviations) { 
-		valid.push(...deviation_mapped.map(([x]) => x));
-		valid.push(...deviation_ignored);
+		valid = valid.concat(deviation_mapped.map(([x]) => x), deviation_ignored);
 	} else {
-		mapped.push(...deviation_mapped);
-		ignored.push(...deviation_ignored);
+		mapped = mapped.concat(deviation_mapped);
+		ignored = ignored.concat(deviation_ignored);
 	}
 	valid = new Set(valid.flatMap(parse_cp_range));
 	ignored = new Set(ignored.flatMap(parse_cp_range));

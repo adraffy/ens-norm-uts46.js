@@ -7,7 +7,8 @@ export interface UTS46Config {
 	punycode?: boolean,
 	version: 2003 | 2008,
 	use_STD3?: boolean,
-	valid_deviations?: boolean
+	valid_deviations?: boolean,
+	nfc?: (cps: number[]) => number[];
 }
 
 export function create_uts46(config: UTS46Config): (name: string) => string;

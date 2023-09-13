@@ -1,6 +1,6 @@
 #  ens-norm-uts46.js
 
-* Unicode `15.0.0`
+* Unicode `15.1.0`
 * Generate entire family of [UTS-46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
 * Passes **100%** [IDNATestV2](https://unicode.org/reports/tr46/#Conformance_Testing)
 * Supports [Context{J,O}](https://datatracker.ietf.org/doc/html/rfc5892#appendix-A)
@@ -10,14 +10,14 @@
 ## Example
 
 ```Javascript
-import {create_uts46} from '@adraffy/ens-norm-uts46'; 
+import {create_uts46} from '@adraffy/ens-norm-uts46';
 // npm i @adraffy/ens-norm-uts46
 // browser: https://cdn.jsdelivr.net/npm/@adraffy/ens-norm-uts46@latest/dist/index.min.js
 
 const uts46 = await create_uts46({
 	version: 2003,
 	use_STD3: true,
-	valid_deviations: true,
+	valid_deviations: true, // deprecated in 15.1
 	check_hyphens: true,
 	check_bidi: true,
 	contextJ: true,
@@ -25,7 +25,7 @@ const uts46 = await create_uts46({
 	check_leading_cm: true,
 	punycode: true
 	// number[] -> number[]
-	// falsy for String.normalize()
+	// leave unspecified for String.normalize()
 	nfc: cps => cps 
 });
 

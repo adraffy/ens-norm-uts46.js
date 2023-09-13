@@ -260,15 +260,19 @@ function is_surrogate(cp) {
 }
 
 var DATA = {
+	"version": {
+		"version": "15.1.0",
+		"major": 15,
+		"minor": 1,
+		"patch": 0
+	},
 	"IDNA": {
 		"disallowed_STD3_valid": [
 			"0000..002C",
 			"002F",
 			"003A..0040",
 			"005B..0060",
-			"007B..007F",
-			"2260",
-			"226E..226F"
+			"007B..007F"
 		],
 		"valid": [
 			"002D..002E",
@@ -1773,6 +1777,7 @@ var DATA = {
 			"2B740..2B81D",
 			"2B820..2CEA1",
 			"2CEB0..2EBE0",
+			"2EBF0..2EE5D",
 			"30000..3134A",
 			"31350..323AF"
 		],
@@ -4951,7 +4956,7 @@ var DATA = {
 			],
 			[
 				"1E9E",
-				"0073 0073"
+				"00DF"
 			],
 			[
 				"1EA0",
@@ -24873,7 +24878,8 @@ var DATA = {
 			"3130",
 			"3164",
 			"318F",
-			"31E4..31EF",
+			"31E4..31EE",
+			"31EF",
 			"321F",
 			"33C2",
 			"33C7",
@@ -25316,7 +25322,8 @@ var DATA = {
 			"2B73A..2B73F",
 			"2B81E..2B81F",
 			"2CEA2..2CEAF",
-			"2EBE1..2F7FF",
+			"2EBE1..2EBEF",
+			"2EE5E..2F7FF",
 			"2F868",
 			"2F874",
 			"2F91F",
@@ -26699,9 +26706,7 @@ var DATA = {
 			"21F4..21FF",
 			"2200..222B",
 			"222E",
-			"2231..225F",
-			"2261..226D",
-			"2270..22F1",
+			"2231..22F1",
 			"22F2..22FF",
 			"2300",
 			"2301",
@@ -29557,6 +29562,7 @@ var DATA = {
 			"2B740..2B81D",
 			"2B820..2CEA1",
 			"2CEB0..2EBE0",
+			"2EBF0..2EE5D",
 			"2F800..2FA1D",
 			"30000..3134A",
 			"31350..323AF",
@@ -29955,7 +29961,7 @@ var DATA = {
 			"2E80..2E99",
 			"2E9B..2EF3",
 			"2F00..2FD5",
-			"2FF0..2FFB",
+			"2FF0..2FFF",
 			"3001..3003",
 			"3004",
 			"3008",
@@ -29989,6 +29995,7 @@ var DATA = {
 			"30A0",
 			"30FB",
 			"31C0..31E3",
+			"31EF",
 			"321D..321E",
 			"3250",
 			"3251..325F",
@@ -30736,6 +30743,7 @@ var DATA = {
 			"2B740..2B81D",
 			"2B820..2CEA1",
 			"2CEB0..2EBE0",
+			"2EBF0..2EE5D",
 			"2F800..2FA1D",
 			"30000..3134A",
 			"31350..323AF"
@@ -30776,7 +30784,12 @@ function nfc_native(cps) {
 function create_uts46({
 	check_hyphens, check_bidi, contextJ, contextO, check_leading_cm, 
 	punycode, version, use_STD3, valid_deviations, nfc = nfc_native
-} = {}) {	
+} = {}) {
+	let unicode_15_1 = (DATA.version.minor >= 1);
+	{
+		// A boolean flag: Transitional_Processing (deprecated)
+		valid_deviations = true;
+	}
 	let {valid, ignored, mapped} = read_idna_rules({use_STD3, version, valid_deviations});
 	mapped = Object.fromEntries(mapped);
 	let valid_puny = valid;
@@ -30807,8 +30820,11 @@ function create_uts46({
 				output.push(...cps);
 				continue;
 			}
-			// disallowed: Leave the code point unchanged in the string, and record that there was an error.		
-			throw new Error(`Disallowed codepoint: ${format_cp(cp)}`);
+			{
+				// [>15.1] disallowed: Leave the code point unchanged in the string. 
+				// Note: The Convert/Validate step below checks for disallowed characters, after mapping and normalization.
+				output.push(cp);
+			}
 		}
 		// [Processing] 2.) Normalize: Normalize the domain_name string to Unicode Normalization Form C.
 		// [Processing] 3.) Break: Break the string into labels at U+002E ( . ) FULL STOP.
@@ -30816,7 +30832,8 @@ function create_uts46({
 			// [Processing] 4.) Convert/Validate
 			try {				
 				let cps = explode_cp$1(label);
-				if (punycode && label.startsWith('xn--')) {
+				if (label.startsWith('xn--')) {
+					if (!punycode) throw new Error(`Punycode: not allowed`);
 					// Attempt to convert the rest of the label to Unicode according to Punycode [RFC3492].
 					// https://www.rfc-editor.org/rfc/rfc3492.html
 					// If that conversion fails, record that there was an error, and continue with the next label.
@@ -30840,6 +30857,15 @@ function create_uts46({
 					} catch (err) {
 						throw new Error(`Punycode: ${err.message}`);
 					}
+				} else if (unicode_15_1) {
+					// [Validity] 7.) Each code point in the label must only have certain Status values according to Section 5, IDNA Mapping Table: 
+					// For Transitional Processing (deprecated), each value must be valid.
+    				// For Nontransitional Processing, each value must be either valid or deviation.
+					for (let cp of cps) {
+						if (!valid.has(cp)) {
+							throw new Error(`Disallowed codepoint: ${format_cp(cp)}`);
+						}
+					}
 				}
 				// [Validity] 1.) The label must be in Unicode Normalization Form NFC.
 				// => satsified
@@ -30859,7 +30885,7 @@ function create_uts46({
 				// [Validity] 6.) For Nontransitional Processing, each value must be either valid or deviation.
 				// => satisfied
 				if (contextJ) {
-					// [Validity] 7.) If CheckJoiners, the label must satisify the ContextJ rules
+					// [Validity] 8.) If CheckJoiners, the label must satisify the ContextJ rules
 					try {
 						validate_contextJ(cps);
 					} catch (err) {
@@ -30878,7 +30904,7 @@ function create_uts46({
 				throw label_error(label, err.message);
 			}
 		});
-		// [Validity] 8.) If CheckBidi, and if the domain name is a Bidi domain name, then the label 
+		// [Validity] 9.) If CheckBidi, and if the domain name is a Bidi domain name, then the label 
 		// must satisfy all six of the numbered conditions in [IDNA2008] RFC 5893, Section 2.
 		// * The spec is ambiguious regarding when you can determine a domain name is bidi
 		// * According to IDNATestV2, this is calculated AFTER puny decoding

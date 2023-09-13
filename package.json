@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46",
-	"version": "0.0.7",
+	"version": "0.1.0",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -12,11 +12,11 @@
 	"exports": {
 		".": {
 			"require": "./dist/index.cjs",
-			"import": "./dist/index.js",
+			"import": "./dist/index.mjs",
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"main": "dist/index.js",
+	"main": "dist/index.mjs",
 	"files": [
 		"./dist"
 	],

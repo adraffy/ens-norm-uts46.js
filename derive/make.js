@@ -3,18 +3,18 @@ import {createInterface} from 'node:readline';
 import {writeFile, mkdir} from 'node:fs/promises';
 
 // https://www.unicode.org/versions/latest/
-const MAJOR = 15;
-const MINOR = 0;
-const PATCH = 0;
+const major = 15;
+const minor = 1;
+const patch = 0;
 
 function url_for_public(s) {
 	return `https://www.unicode.org/Public/${s}`;
 }
 function url_for_spec(s) {
-	return url_for_public(`${MAJOR}.${MINOR}.${PATCH}/${s}`);
+	return url_for_public(`${major}.${minor}.${patch}/${s}`);
 }
 function url_for_idna(s) {
-	return url_for_public(`idna/${MAJOR}.${MINOR}.${PATCH}/${s}`);
+	return url_for_public(`idna/${major}.${minor}.${patch}/${s}`);
 }
 /*
 function url_for_emoji(s) {
@@ -42,7 +42,7 @@ await mkdir(data_dir, {recursive: true});
 await mkdir(json_dir, {recursive: true});
 
 // write a version file
-await writeFile(new URL('version.json', data_dir), JSON.stringify({major: MAJOR, minor: MINOR, patch: PATCH, date: new Date()}));
+await writeFile(new URL('version.json', data_dir), JSON.stringify({major, minor, patch, date: new Date()}));
 
 // download the unicode shit
 await Promise.all(urls.map(async url => {
@@ -150,7 +150,10 @@ BidiClass = filter_keys(BidiClass, ['R', 'AL', 'L', 'AN', 'EN', 'ES', 'CS', 'ET'
 let CM = Object.entries(GeneralCategory).flatMap(([k, v]) => k.startsWith('M') ? [...v] : []);
 
 await writeFile(out_file, `export default ${JSON.stringify({
-	version: `${MAJOR}.${MINOR}.${PATCH}`,
+	version: {
+		version: `${major}.${minor}.${patch}`,
+		major, minor, patch
+	},
 	IDNA,
 	CM,
 	JoiningType,

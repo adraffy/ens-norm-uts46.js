@@ -1,11 +1,12 @@
 #  ens-norm-uts46.js
 
-* Unicode `15.1.0`
-* Generate entire family of [UTS-46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
+* Unicode `15.1.0` (but can be built using older versions)
+* Generates entire family of [UTS-46](https://unicode.org/reports/tr46/) `ToUnicode()` functions
 * Passes **100%** [IDNATestV2](https://unicode.org/reports/tr46/#Conformance_Testing)
 * Supports [Context{J,O}](https://datatracker.ietf.org/doc/html/rfc5892#appendix-A)
 * Supports [Punycode](https://github.com/adraffy/punycode.js)
-* Uses `String.normalize()` for [NFC](https://unicode.org/reports/tr15/) (if no implementation is provided)
+* ⚠️ Uses `String.normalize()` for [NFC](https://unicode.org/reports/tr15/) (if no implementation is provided)
+* ⚠️ Not space-efficient: [`~185 KB`](./dist/index.min.js) minified
 
 ## Example
 
@@ -24,9 +25,7 @@ const uts46 = await create_uts46({
 	contextO: false,
 	check_leading_cm: true,
 	punycode: true
-	// number[] -> number[]
-	// leave unspecified for String.normalize()
-	nfc: cps => cps 
+	nfc: cps => cps // number[] -> number[], leave unspecified for String.normalize()	
 });
 
 console.log(uts46('RAFFY.ETH'));

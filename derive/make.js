@@ -3,8 +3,8 @@ import {createInterface} from 'node:readline';
 import {writeFile, mkdir} from 'node:fs/promises';
 
 // https://www.unicode.org/versions/latest/
-const major = 15;
-const minor = 1;
+const major = 16;
+const minor = 0;
 const patch = 0;
 
 function url_for_public(s) {
@@ -102,11 +102,25 @@ await translate('IdnaTestV2', {
 			this.test = match[1].trim();
 		}
 	},
-	row([src, toUnicode, status]) {
+	fix(s) {
+		// new in Unicode 16
+		// "Starting with Unicode 16.0, the test format uses "" to mean the empty string."
+		if (s === '""') return ''; // this should be backwards compat
 		// new in Unicode 15
-		// This file is in UTF-8, where characters may be escaped using the \uXXXX or \x{XXXX}
-		src = JSON.parse(`"${src}"`); // this hack should be backwards compat
-		toUnicode = JSON.parse(`"${toUnicode}"`);
+		// "This file is in UTF-8, where characters may be escaped using the \uXXXX or \x{XXXX}""
+		return JSON.parse(`"${s}"`); // this should be backwards compat
+	},
+	row([src, toUnicode, status]) {
+		// # Column 1: source -          The source string to be tested.
+		// #                             "" means the empty string.
+		// # Column 2: toUnicode -       The result of applying toUnicode to the source,
+		// #                             with Transitional_Processing=false.
+		// #                             A blank value means the same as the source value.
+		// #                             "" means the empty string.
+		// # Column 3: toUnicodeStatus - A set of status codes, each corresponding to a particular test.
+		// #                             A blank value means [] (no errors).
+		src = this.fix(src);
+		toUnicode = this.fix(toUnicode || src);
 		status = status.split(/[\[\],]/).map(x => x.trim()).filter(x => x);
 		this.get_bucket(this.test).push([src, toUnicode, status]);
 	}

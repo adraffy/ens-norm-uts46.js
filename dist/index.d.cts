@@ -12,3 +12,10 @@ export interface UTS46Config {
 }
 
 export function create_uts46(config: UTS46Config): (name: string) => string;
+
+export const VERSION: {
+	version: string;
+	major: number;
+	minor: number;
+	patch: number;
+};

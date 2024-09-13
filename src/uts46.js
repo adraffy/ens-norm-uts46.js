@@ -2,6 +2,8 @@ import {explode_cp, escape_unicode, parse_cp_range, parse_cp_sequence} from './u
 import {puny_decode} from '@adraffy/punycode';
 import DATA from './include.js';
 
+export const VERSION = DATA.version;
+
 function set(...a) {
 	return new Set(a.flat().flatMap(parse_cp_range));
 }
@@ -36,8 +38,8 @@ export function create_uts46({
 	check_hyphens, check_bidi, contextJ, contextO, check_leading_cm, 
 	punycode, version, use_STD3, valid_deviations, nfc = nfc_native
 } = {}) {
-	let unicode_15_1 = DATA.version.major > 15 || (DATA.version.major == 15 && DATA.version.minor >= 1);
-	if (unicode_15_1) {
+	let ge_15_1 = DATA.version.major > 15 || (DATA.version.major == 15 && DATA.version.minor >= 1);
+	if (ge_15_1) {
 		// A boolean flag: Transitional_Processing (deprecated)
 		valid_deviations = true;
 	}
@@ -50,13 +52,14 @@ export function create_uts46({
 	return function(name) {
 		// https://unicode.org/reports/tr46/#Processing
 		// https://unicode.org/reports/tr46/#Validity_Criteria
-		// [Processing] 1.) Map
+		// [Processing] 1.) Map: for each code point in the domain_name string, 
+		// look up the Status value in Section 5, IDNA Mapping Table
 		let input = explode_cp(name).reverse(); // flip so we can pop
 		let output = [];
 		while (input.length) {
 			let cp = input.pop();
 			// deviation: Leave the code point unchanged in the string.
-			// valid: Leave the code point unchanged in the string.		
+			// valid: Leave the code point unchanged in the string.
 			if (valid.has(cp)) {
 				output.push(cp);
 				continue;
@@ -71,7 +74,7 @@ export function create_uts46({
 				output.push(...cps);
 				continue;
 			}
-			if (unicode_15_1) {
+			if (ge_15_1) {
 				// [>15.1] disallowed: Leave the code point unchanged in the string. 
 				// Note: The Convert/Validate step below checks for disallowed characters, after mapping and normalization.
 				output.push(cp);
@@ -93,6 +96,11 @@ export function create_uts46({
 					// If that conversion fails, record that there was an error, and continue with the next label.
 					try {
 						cps = puny_decode(cps.slice(4));
+						if (DATA.version.major >= 16) {
+							// If the label is empty, or if the label contains only ASCII code points, record that there was an error.
+							if (!cps.length) throw new Error('Empty');
+							if (cps.every(cp => cp <= 0x7F)) throw new Error('Only ASCII');
+						}
 						// With either Transitional or Nontransitional Processing, sources already in Punycode are validated without mapping. 
 						// In particular, Punycode containing Deviation characters, such as href="xn--fu-hia.de" (for fuß.de) is not remapped. 
 						// This provides a mechanism allowing explicit use of Deviation characters even during a transition period. 
@@ -111,12 +119,12 @@ export function create_uts46({
 					} catch (err) {
 						throw new Error(`Punycode: ${err.message}`);
 					}
-				} else if (unicode_15_1) {
+				} else if (ge_15_1) {
 					// [Validity] 7.) Each code point in the label must only have certain Status values according to Section 5, IDNA Mapping Table: 
 					// For Transitional Processing (deprecated), each value must be valid.
     				// For Nontransitional Processing, each value must be either valid or deviation.
 					for (let cp of cps) {
-						if (!valid.has(cp)) {
+						if (!valid.has(cp) ) {
 							throw new Error(`Disallowed codepoint: ${format_cp(cp)}`);
 						}
 					}
@@ -138,6 +146,20 @@ export function create_uts46({
 				}
 				// [Validity] 6.) For Nontransitional Processing, each value must be either valid or deviation.
 				// => satisfied
+				if (use_STD3 && DATA.version.major >= 16) {
+					// In addition, if UseSTD3ASCIIRules=true and the code point is an ASCII code point (U+0000..U+007F),
+					// then it must be a lowercase letter (a-z), a digit (0-9), or a hyphen-minus (U+002D).
+					// (Note: This excludes uppercase ASCII A-Z which are mapped in UTS #46 and disallowed in IDNA2008.)
+					for (let cp of cps) {
+						if (cp > 0x7F) {
+						} else if (cp >= 0x61 && cp <= 0x7A) { // "a-z"
+						} else if (cp >= 0x30 && cp <= 0x39) { // "0-9"
+						} else if (cp === 0x2D) { // "-"
+						} else {
+							throw new Error(`Disallowed ASCII codepoint: ${format_cp(cp)}`);
+						}
+					}
+				}
 				if (contextJ) {
 					// [Validity] 8.) If CheckJoiners, the label must satisify the ContextJ rules
 					try {
@@ -192,8 +214,8 @@ export function read_idna_rules({version, use_STD3, valid_deviations}) {
 		deviation_mapped,
 		deviation_ignored,
 		disallowed,
-		disallowed_STD3_mapped,
-		disallowed_STD3_valid,
+		disallowed_STD3_mapped = [],
+		disallowed_STD3_valid = [],
 		...extra
 	} = DATA.IDNA;
 	if (Object.keys(extra).length > 0) {
@@ -231,7 +253,6 @@ export function read_idna_rules({version, use_STD3, valid_deviations}) {
 	});
 	return {valid, ignored, mapped};
 }
-
 
 export function validate_bidi_label(cps) {
 	if (cps.length == 0) return;

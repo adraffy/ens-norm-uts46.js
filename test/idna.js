@@ -1,22 +1,24 @@
 // perform IDNATestV2, fail on any error
 // https://unicode.org/reports/tr46/#Conformance_Testing
 
-import {create_uts46} from '../src/uts46.js';
+import {create_uts46, VERSION} from '../src/uts46.js';
 import {explode_cp} from '../src/utils.js';
 import {readFileSync} from 'node:fs';
-//import {nfc} from '../../ens-normalize.js/src/nf.js';
-//import {nfc} from '@adraffy/ens-normalize';
+
+console.log(VERSION);
 
 const uts46 = create_uts46({
 	version: 2003, 
 	use_STD3: true, 
-	//valid_deviations: true, // deprecated
+	//valid_deviations: true, // deprecated in 15.1
 	check_hyphens: true,
 	check_bidi: true,
 	contextJ: true,
 	check_leading_cm: true,
 	punycode: true,
-	//nfc // note: an Unicode 15.1.0 implementation is required
+	// note: an matching Unicode version is required
+	// 20240912: 16.0.0 tests pass with 15.1.0 NF
+	//nfc: (await import('../../ens-normalize.js/src/nf.js')).nfc
 });
 
 for (let [test, cases] of Object.entries(JSON.parse(readFileSync(new URL('../derive/json/IdnaTestV2.json', import.meta.url))))) {

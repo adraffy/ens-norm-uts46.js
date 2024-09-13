@@ -1,6 +1,6 @@
 {
 	"name": "@adraffy/ens-norm-uts46",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "ENS Name Normalization UTS46 Implementation",
 	"keywords": [
 		"ENS",
@@ -10,13 +10,9 @@
 	],
 	"type": "module",
 	"exports": {
-		".": {
-			"require": "./dist/index.cjs",
-			"import": "./dist/index.mjs",
-			"types": "./dist/index.d.ts"
-		}
+		"import": "./dist/index.mjs",
+		"default": "./dist/index.cjs"
 	},
-	"main": "dist/index.mjs",
 	"files": [
 		"./dist"
 	],
@@ -37,12 +33,12 @@
 	"scripts": {
 		"derive": "node derive/make.js",
 		"test": "node test/idna.js",
-		"build": "rollup -c"
+		"build": "cp dist/index.d.mts dist/index.d.cts && rollup -c"
 	},
 	"dependencies": {
 		"@adraffy/punycode": "^1.2.0",
-		"@rollup/plugin-node-resolve": "^15.0.2",
-		"@rollup/plugin-terser": "^0.4.1",
-		"rollup": "^3.21.2"
+		"@rollup/plugin-node-resolve": "^15.2.3",
+		"@rollup/plugin-terser": "^0.4.4",
+		"rollup": "^4.21.3"
 	}
 }

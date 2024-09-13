@@ -7,11 +7,12 @@
 * ⚠️ Uses `String.normalize()` for [NFC](https://unicode.org/reports/tr15/) (if no implementation is provided)
 * ⚠️ Not space-efficient: [`~188 KB`](./dist/index.min.js) minified
 
+`$ npm i @adraffy/ens-norm-uts46` [&check;](https://www.npmjs.com/package/@adraffy/ens-norm-uts46)
+
 ## Example
 
-```Javascript
+```js
 import {create_uts46} from '@adraffy/ens-norm-uts46';
-// npm i @adraffy/ens-norm-uts46
 // browser: https://cdn.jsdelivr.net/npm/@adraffy/ens-norm-uts46@latest/dist/index.min.js
 
 const uts46 = create_uts46({

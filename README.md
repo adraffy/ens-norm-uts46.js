@@ -5,9 +5,9 @@
 	- Supports [Bidi](https://datatracker.ietf.org/doc/html/rfc5893#section-2), [Context{J,O}](https://datatracker.ietf.org/doc/html/rfc5892#appendix-A), and [Punycode](https://github.com/adraffy/punycode.js)
 * ✅️ Passes **100%** [IDNATestV2](https://unicode.org/reports/tr46/#Conformance_Testing)
 * ⚠️ Uses `String.normalize()` for [NFC](https://unicode.org/reports/tr15/) (if no implementation is provided)
-* ⚠️ Not space-efficient: [`~188 KB`](./dist/index.min.js) minified
+* ⚠️ Designed for testing (not space-efficient! [`~188 KB`](./dist/index.min.js) minified)
 
-`$ npm i @adraffy/ens-norm-uts46` [&check;](https://www.npmjs.com/package/@adraffy/ens-norm-uts46)
+`npm i @adraffy/ens-norm-uts46` [&check;](https://www.npmjs.com/package/@adraffy/ens-norm-uts46)
 
 ## Example
 
@@ -33,9 +33,9 @@ console.log(uts46('RAFFY.ETH'));
 
 ## Build
 
-* `git clone` this repo then `npm install`
+* `npm i`
 * `npm run derive` — download and parse Unicode data files
-	* Edit [make.js](./derive/make.js) to change Unicode version
-	* Creates [include.js](./src/include.js)
+	* edit [make.js](./derive/make.js) to change Unicode version
+	* creates [include.js](./src/include.js)
 * `npm run test` — validate against IDNATestV2
 * `npm run build` — create `/dist/`
